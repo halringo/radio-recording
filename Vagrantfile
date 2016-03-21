@@ -1,6 +1,30 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# provisioning script
+setup = <<SHELL
+# OS 更新
+sudo apt-get update
+sudo apt-get -y upgrade
+
+# 必要なパッケージをインストール
+sudo apt-get -y install language-pack-ja wget swftools rtmpdump libxml2-utils python-pip ntp
+sudo apt-get clean
+
+# タイムゾーンの設定・日本語化
+echo "Asia/Tokyo" | sudo tee /etc/timezone
+sudo dpkg-reconfigure --frontend noninteractive tzdata
+sudo update-locale LANG=ja_JP.UTF-8
+
+# Installing the AWS Command Line Interface (need Pip)
+sudo pip install awscli
+
+# ディレクトリ作成
+mkdir -p /home/vagrant/radio/script
+mkdir -p /home/vagrant/radio/log
+SHELL
+
+
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
@@ -32,24 +56,28 @@ Vagrant.configure(2) do |config|
   # Bridged networks make the machine appear as another physical device on
   # your network.
   # config.vm.network "public_network"
+  config.vm.network "public_network", ip: "192.168.5.152"
 
   # Share an additional folder to the guest VM. The first argument is
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
   # config.vm.synced_folder "../data", "/vagrant_data"
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.synced_folder "./radio", "/home/vagrant/radio"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
   #
-  # config.vm.provider "virtualbox" do |vb|
+  config.vm.provider "virtualbox" do |vb|
   #   # Display the VirtualBox GUI when booting the machine
   #   vb.gui = true
   #
   #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
+    vb.memory = "512"
+    vb.cpus = 1
+  end
   #
   # View the documentation for the provider you are using for more
   # information on available options.
@@ -68,4 +96,5 @@ Vagrant.configure(2) do |config|
   #   sudo apt-get update
   #   sudo apt-get install -y apache2
   # SHELL
+  config.vm.provision "shell", inline: setup, privileged: false
 end
